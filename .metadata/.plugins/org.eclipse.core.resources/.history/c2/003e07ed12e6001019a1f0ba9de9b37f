@@ -1,0 +1,11 @@
+package com.bluecollar.dto;
+
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
+public class AadhaarDocument {
+    private String number;
+    private String status;        // VERIFIED | PENDING | REJECTED | NOT_UPLOADED
+    private String documentUrl;   // S3 / Cloudinary / MinIO
+    private String uploadDate;
+}

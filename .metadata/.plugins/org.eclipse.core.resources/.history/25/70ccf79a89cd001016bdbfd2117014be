@@ -1,0 +1,11 @@
+package com.bluecollar.service;
+
+import com.bluecollar.dto.UserDTO;
+
+public interface UserService {
+	
+	
+	
+	
+	public UserDTO registerUser(UserDTO userDTO);
+}

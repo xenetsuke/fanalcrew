@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<qualifiedTypeNameHistroy>
+    <fullyQualifiedTypeName name="lombok.NoArgsConstructor"/>
+    <fullyQualifiedTypeName name="lombok.AllArgsConstructor"/>
+    <fullyQualifiedTypeName name="org.springframework.web.bind.annotation.CrossOrigin"/>
+    <fullyQualifiedTypeName name="java.lang.Override"/>
+    <fullyQualifiedTypeName name="org.springframework.data.mongodb.core.MongoAdminOperations"/>
+    <fullyQualifiedTypeName name="com.bluecollar.service.NotificationService"/>
+    <fullyQualifiedTypeName name="com.bluecollar.repository.NotificationRepository"/>
+    <fullyQualifiedTypeName name="com.bluecollar.exception.BlueCollarException"/>
+</qualifiedTypeNameHistroy>

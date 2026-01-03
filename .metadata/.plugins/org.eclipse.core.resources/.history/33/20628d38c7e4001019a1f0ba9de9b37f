@@ -1,0 +1,5 @@
+package com.bluecollar.service;
+
+public class EmailTestRunner {
+
+}

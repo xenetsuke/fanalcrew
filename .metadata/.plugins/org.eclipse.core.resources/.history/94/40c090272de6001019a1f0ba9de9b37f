@@ -1,0 +1,21 @@
+package com.bluecollar.dto;
+
+
+
+import java.util.Base64;
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+
+@Data
+@AllArgsConstructor
+@NoArgsConstructor
+public class EmployerSnapshotDTO {
+
+    private Long profileId;
+    private String companyName;
+    private String city;
+
+    // Base64 string (frontend friendly)
+    private String picture;
+}

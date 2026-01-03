@@ -1,0 +1,10 @@
+package com.bluecollar.api;
+
+
+@RestController
+@CrossOrigin
+@Validated
+@RequestMapping("/users")
+public class ProfileAPI {
+
+}

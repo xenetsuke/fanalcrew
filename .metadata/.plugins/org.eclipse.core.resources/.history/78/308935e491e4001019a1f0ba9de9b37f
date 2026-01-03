@@ -1,0 +1,35 @@
+import static org.assertj.core.api.Assertions.filter;
+
+import org.springframework.context.annotation.Bean;
+import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.security.config.http.SessionCreationPolicy;
+import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+
+@Bean
+public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
+
+    http
+        .cors() // ✅ ENABLE CORS (THIS WAS MISSING)
+        .and()
+        .csrf(csrf -> csrf.disable())
+        .authorizeHttpRequests(auth -> auth
+            .requestMatchers(
+                "/auth/login",
+                "/users/login",
+                "/users/register",
+                "/users/verifyOtp/**",
+                "/users/sendOtp/**",
+                "/users/changePass"
+            ).permitAll()
+            .anyRequest().authenticated()
+        )
+        .exceptionHandling(ex -> ex.authenticationEntryPoint(point))
+        .sessionManagement(session ->
+            session.sessionCreationPolicy(SessionCreationPolicy.STATELESS)
+        );
+
+    http.addFilterBefore(filter, UsernamePasswordAuthenticationFilter.class);
+
+    return http.build();
+}

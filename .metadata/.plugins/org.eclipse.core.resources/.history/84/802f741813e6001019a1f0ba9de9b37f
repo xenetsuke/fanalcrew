@@ -1,0 +1,12 @@
+package com.bluecollar.dto;
+
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
+public class AdditionalDocument {
+    private String id;
+    private String name;
+    private String status;
+    private String documentUrl;
+    private String uploadDate;
+}

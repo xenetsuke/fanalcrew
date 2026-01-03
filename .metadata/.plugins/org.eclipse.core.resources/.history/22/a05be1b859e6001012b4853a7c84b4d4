@@ -1,0 +1,21 @@
+package com.bluecollar.dto;
+
+public enum ExperienceLevel {
+    Zero_TO_One(1), 
+    ONE_TO_TWO(2), 
+    TWO_TO_THREE(3), 
+    THREE_PLUS(4), 
+    EXPERT(5);
+
+    private final int value;
+
+    // Constructor
+    ExperienceLevel(int value) {
+        this.value = value;
+    }
+
+    // Method to get the integer form
+    public int toInt() {
+        return this.value;
+    }
+}

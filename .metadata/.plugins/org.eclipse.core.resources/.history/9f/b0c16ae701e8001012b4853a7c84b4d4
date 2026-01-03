@@ -1,0 +1,256 @@
+package com.bluecollar.service;
+
+import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.Base64;
+import java.util.List;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+
+import com.bluecollar.dto.ApplicantDTO;
+import com.bluecollar.dto.Application;
+import com.bluecollar.dto.ApplicationStatus;
+import com.bluecollar.dto.EmployerSnapshotDTO; // ✅ NEW
+import com.bluecollar.dto.JobDTO;
+import com.bluecollar.dto.JobStatus;
+import com.bluecollar.dto.NotificationDTO;
+import com.bluecollar.entity.Applicant;
+import com.bluecollar.entity.Job;
+import com.bluecollar.exception.BlueCollarException;
+import com.bluecollar.repository.JobRepository;
+import com.bluecollar.repository.ProfileRepository; // ✅ NEW
+import com.bluecollar.utility.Utilities;
+
+@Service("jobService")
+public class JobServiceImpl implements JobService {
+
+    @Autowired
+    private JobRepository jobRepository;
+
+    @Autowired
+    private NotificationService notificationService;
+
+    // =====================================================
+    // ✅ NEW: Profile repository (for employer enrichment)
+    // =====================================================
+    @Autowired
+    private ProfileRepository profileRepository;
+
+    // =====================================================
+    // 🔹 Helper: Enrich JobDTO with Employer Snapshot
+    // =====================================================
+    private JobDTO enrichEmployer(Job job, JobDTO dto) {
+
+        // postedBy = employer profile ID
+        if (job.getPostedBy() == null) return dto;
+
+        profileRepository.findById(job.getPostedBy()).ifPresent(profile -> {
+
+            EmployerSnapshotDTO employer = new EmployerSnapshotDTO();
+            employer.setProfileId(profile.getId());
+            employer.setCompanyName(profile.getCompanyName());
+            employer.setCity(profile.getCity());
+
+            // 🔥 Convert byte[] → Base64 for frontend
+            if (profile.getPicture() != null) {
+                employer.setPicture(
+                    Base64.getEncoder().encodeToString(profile.getPicture())
+                );
+            }
+
+            dto.setEmployer(employer);
+        });
+
+        return dto;
+    }
+
+    // =====================================================
+    // POST / UPDATE JOB
+    // =====================================================
+    @Override
+    public JobDTO postJob(JobDTO jobDTO) throws BlueCollarException {
+
+        if (jobDTO.getId() == null || jobDTO.getId() == 0) {
+            jobDTO.setId(Utilities.getNextSequenceId("jobs"));
+            jobDTO.setPostTime(LocalDateTime.now());
+        } else {
+            Job job = jobRepository.findById(jobDTO.getId())
+                    .orElseThrow(() -> new BlueCollarException("JOB_NOT_FOUND"));
+
+            if (job.getJobStatus().equals(JobStatus.DRAFT)
+                    || jobDTO.getJobStatus().equals(JobStatus.EXPIRED)) {
+                jobDTO.setPostTime(LocalDateTime.now());
+            }
+        }
+
+        Job savedJob = jobRepository.save(jobDTO.toEntity());
+        JobDTO dto = savedJob.toDTO();
+
+        // ✅ Enrich employer snapshot before returning
+        return enrichEmployer(savedJob, dto);
+    }
+
+    // =====================================================
+    // GET ALL JOBS
+    // =====================================================
+    @Override
+    public List<JobDTO> getAllJobs() {
+
+        return jobRepository.findAll()
+                .stream()
+                .map(job -> {
+                    JobDTO dto = job.toDTO();
+                    return enrichEmployer(job, dto); // ✅ enrichment
+                })
+                .toList();
+    }
+
+    // =====================================================
+    // GET SINGLE JOB
+    // =====================================================
+    @Override
+    public JobDTO getJob(Long id) throws BlueCollarException {
+
+        Job job = jobRepository.findById(id)
+                .orElseThrow(() -> new BlueCollarException("JOB_NOT_FOUND"));
+
+        JobDTO dto = job.toDTO();
+        return enrichEmployer(job, dto); // ✅ enrichment
+    }
+
+    // =====================================================
+    // APPLY JOB
+    // =====================================================
+    @Override
+    public void applyJob(Long id, ApplicantDTO applicantDTO) throws BlueCollarException {
+
+        Job job = jobRepository.findById(id)
+                .orElseThrow(() -> new BlueCollarException("JOB_NOT_FOUND"));
+
+        List<Applicant> applicants = job.getApplicants();
+        if (applicants == null) applicants = new ArrayList<>();
+
+        if (applicants.stream()
+                .anyMatch(x -> x.getApplicantId() == applicantDTO.getApplicantId())) {
+            throw new BlueCollarException("JOB_APPLIED_ALREADY");
+        }
+
+        applicantDTO.setApplicationStatus(ApplicationStatus.APPLIED);
+        applicants.add(applicantDTO.toEntity());
+
+        job.setApplicants(applicants);
+        jobRepository.save(job);
+    }
+
+    // =====================================================
+    // GET JOBS POSTED BY EMPLOYER
+    // =====================================================
+    @Override
+    public List<JobDTO> getJobsPostedBy(Long id) {
+
+        return jobRepository.findByPostedBy(id)
+                .stream()
+                .map(job -> {
+                    JobDTO dto = job.toDTO();
+                    return enrichEmployer(job, dto); // ✅ enrichment
+                })
+                .toList();
+    }
+    
+    @Override
+    public List<JobDTO> getJobsByCompany(Long companyProfileId) {
+        return jobRepository
+                .findByPostedBy(companyProfileId)
+                .stream()
+                .map(Job::toDTO)
+                .toList();
+    }
+
+
+    // =====================================================
+    // CHANGE APPLICATION STATUS
+    // =====================================================
+    @Override
+    public void changeAppStatus(Application application) throws BlueCollarException {
+
+        Job job = jobRepository.findById(application.getId())
+                .orElseThrow(() -> new BlueCollarException("JOB_NOT_FOUND"));
+
+        List<Applicant> apps = job.getApplicants().stream().map(x -> {
+
+            if (application.getApplicantId() == x.getApplicantId()) {
+
+                x.setApplicationStatus(application.getApplicationStatus());
+
+                if (application.getApplicationStatus()
+                        .equals(ApplicationStatus.INTERVIEWING)) {
+
+                    x.setInterviewTime(application.getInterviewTime());
+
+                    NotificationDTO notiDto = new NotificationDTO();
+                    notiDto.setAction("Interview Scheduled");
+                    notiDto.setMessage("Interview scheduled for job id: " + application.getId());
+                    notiDto.setUserId(application.getApplicantId());
+                    notiDto.setRoute("/job-history");
+
+                    try {
+                        notificationService.sendNotification(notiDto);
+                    } catch (BlueCollarException e) {
+                        e.printStackTrace();
+                    }
+                }
+            }
+            return x;
+        }).toList();
+
+        job.setApplicants(apps);
+        jobRepository.save(job);
+    }
+
+    // =====================================================
+    // ✅ DELETE JOB IMPLEMENTATION
+    // =====================================================
+    
+ // ✅ UPDATE JOB STATUS (CLOSE/EXPIRE)
+    // =====================================================
+    @Override
+    public void updateJobStatus(Long id, String status) throws BlueCollarException {
+        // 1. Find the job or throw error
+        Job job = jobRepository.findById(id)
+                .orElseThrow(() -> new BlueCollarException("JOB_NOT_FOUND"));
+
+        try {
+            // 2. Convert the String from Frontend ("EXPIRED") to the Enum JobStatus
+            // valueOf is case-sensitive, so we use toUpperCase() for safety
+            JobStatus newStatus = JobStatus.valueOf(status.toUpperCase());
+            
+            // 3. Update and Save
+            job.setJobStatus(newStatus);
+            jobRepository.save(job);
+            
+        } catch (IllegalArgumentException e) {
+            // This happens if the string doesn't match any Enum value (DRAFT, ACTIVE, etc.)
+            throw new BlueCollarException("INVALID_JOB_STATUS");
+        }
+    }
+
+    // =====================================================
+    // ✅ DELETE JOB IMPLEMENTATION
+    // =====================================================
+    @Override
+    public void deleteJob(Long id) throws BlueCollarException {
+        Job job = jobRepository.findById(id)
+                .orElseThrow(() -> new BlueCollarException("JOB_NOT_FOUND"));
+        
+        jobRepository.delete(job);
+    }
+}
+    @Override
+    public void deleteJob(Long id) throws BlueCollarException {
+        Job job = jobRepository.findById(id)
+                .orElseThrow(() -> new BlueCollarException("JOB_NOT_FOUND"));
+        
+        jobRepository.delete(job);
+    }
+}

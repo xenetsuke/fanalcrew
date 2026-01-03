@@ -1,0 +1,15 @@
+package com.bluecollar.dto;
+
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
+public class AadhaarDocument {
+    private String number;
+    private String status;        // VERIFIED | PENDING | REJECTED | NOT_UPLOADED
+    private String documentUrl;   // S3 / Cloudinary / MinIO
+    private String uploadDate;
+}

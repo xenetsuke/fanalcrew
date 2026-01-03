@@ -1,0 +1,5 @@
+package com.bluecollar.dto;
+
+public class BankDetails {
+
+}

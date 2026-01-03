@@ -1,0 +1,47 @@
+spring.application.name=Blue-Collar
+spring.data.mongodb.auto-index-creation=true
+
+#spring.mongodb.uri=mongodb\://localhost\:27017/bluecolla
+spring.mongodb.uri=mongodb\://localhost\:27017/bluecollar
+
+
+
+mongodb+srv://itsshrey:<db_password>@cluster0.5pgzwvd.mongodb.net/?appName=Cluster0
+#Email Properties
+#spring.mail.host=smtp.titan.email
+#spring.mail.port=465
+#spring.mail.username=contact@crewseed.com
+#spring.mail.password=Crewseed@12345
+#spring.mail.properties.mail.smtp.auth=true
+#spring.mail.protocol=smtps
+#
+#spring.mail.properties.mail.smtp.ssl.enable=true
+#spring.mail.properties.mail.smtp.ssl.trust=smtp.titan.email
+#spring.mail.properties.mail.debug=true
+#spring.mail.properties.mail.smtp.starttls.enable=true
+ #Email Properties
+spring.mail.host=smtp.gmail.com
+spring.mail.port=587
+spring.mail.username=shreycse25@gmail.com
+spring.mail.password=tgfnuwazuwhzdbkt
+spring.mail.properties.mail.smtp.auth=true
+spring.mail.properties.mail.smtp.starttls.enable=true
+
+
+
+
+
+
+#Exception Messages
+
+USER_FOUND= Email registered already.
+USER_NOT_FOUND = User is not registered.
+INVALID_CREDENTIALS= Invalid Credentials.
+PROFILE_NOT_FOUND=Profile not found.
+
+OTP_NOT_FOUND=OTP has been expired.
+OTP_INCORRECT=OTP is incorrect.
+
+JOB_NOT_FOUND=Job not found.
+JOB_APPLIED_ALREADY=Already Applied to this Job.
+APPLICANT_NOT_FOUND=Applicant not found.
