@@ -1,10 +1,11 @@
 # Stage 1: Build the application using Maven and OpenJDK 17
 FROM maven:3.8.5-openjdk-17 AS build
 
-# Set the working directory in the container
+# Set the working directory in the container (Blue-Collar is the name of the subdirectory)
+WORKDIR /Blue-Collar
 
-# Copy the current directory (including the POM file) to the working directory
-COPY . .
+# Copy the content of your local Blue-Collar folder into the container's /Blue-Collar folder
+COPY ./Blue-Collar /Blue-Collar
 
 # Build the application using Maven (skip tests to speed up the build)
 RUN mvn clean package -DskipTests
@@ -12,11 +13,11 @@ RUN mvn clean package -DskipTests
 # Stage 2: Run the application using OpenJDK 17 Slim
 FROM openjdk:17.0.1-jdk-slim
 
-# Set the working directory
-
+# Set the working directory for the runtime stage
+WORKDIR /app
 
 # Copy the built .jar file from the previous build stage
-COPY --from=build /target/Blue-Collar-0.0.1-SNAPSHOT.jar Blue-Collar.jar
+COPY --from=build /Blue-Collar/target/Blue-Collar-0.0.1-SNAPSHOT.jar /app/Blue-Collar.jar
 
 # Expose the port the application will run on (default for Spring Boot is 8080)
 EXPOSE 8080
